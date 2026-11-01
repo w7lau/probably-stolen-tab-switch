@@ -1,0 +1,14 @@
+[h1]Tab 切换储存标签[/h1]
+打开使用扩容工具扩展过的储存区，按一次 Tab 就切换到下一个标签，最后一页循环回第一页。
+
+[list]
+[*]多个容器同时打开时，先点击要操作的窗口使其置前，只切换这个容器。
+[*]输入文字、标签重命名、重绑快捷键、设置及暂停菜单中不触发。
+[*]无需前置 Mod。
+[/list]
+订阅后在游戏 Mods 菜单启用，再重启游戏。
+
+[h1]Storage Tab Cycle[/h1]
+Press Tab to cycle tabs in the focused expanded storage bay. Wraps from the last tab to the first. Click the intended container first when multiple windows are open. No dependencies. Enable in Mods and restart the game.
+
+MIT 开源 / Source: https://github.com/w7lau/probably-stolen-tab-switch
