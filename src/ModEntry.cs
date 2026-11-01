@@ -16,7 +16,7 @@ namespace StorageTabCycle
             SettingsWindowId = ModConfigWindow.WINDOW_ID_PREFIX + manifest.ID;
             TabKey = config.DefineEnum("cycle_tab_key", KeyCode.Tab, "快捷键 / Hotkeys",
                 () => "切换标签 / Next tab",
-                () => "循环切换当前扩容储存区的标签。None 表示禁用。\nCycle expanded storage tabs. None disables this shortcut.");
+                () => "循环切换当前容器或机器窗口的标签。None 表示禁用。\nCycle tabs in the current container or machine window. None disables this shortcut.");
             ContainerKey = config.DefineEnum("cycle_container_key", KeyCode.BackQuote, "快捷键 / Hotkeys",
                 () => "切换容器 / Next container",
                 () => "循环切换下方主物品栏的容器：关闭时打开，已打开时置前。BackQuote 是 Tab 上方的反引号键。None 表示禁用。\nCycle main-inventory containers: open or bring to front. BackQuote is the key above Tab. None disables this shortcut.");
@@ -70,26 +70,49 @@ namespace StorageTabCycle
                     focused = window;
             }
 
-            // Do not reach through a different foreground container to a storage
-            // window behind it. Use the exact native expansion panel structure.
+            // Keep the shortcut in the foreground item's content window, but do
+            // not require an expansion-kit tag: native multi-page items lack it.
             if (focused == null || focused.isLocked) return;
-            bool expandedStorage = false;
+            bool hasOwner = false;
             foreach (var item in focused.parentItems)
             {
-                if (item != null && item.contentWindow == focused
-                    && StorageExpansionHelper.GetExtraTabs(item) > 0)
+                if (item != null && item.contentWindow == focused)
                 {
-                    expandedStorage = true;
+                    hasOwner = true;
                     break;
                 }
             }
-            if (!expandedStorage) return;
-            var tabs = (focused.childElement as MachineryPanelRow)
-                ?.GetPanel("storage")?.content as MachineryTabs;
-            if (tabs == null || tabs.count < 2 || tabs.handler == null
-                || !tabs.handler.gameObject.activeInHierarchy) return;
+            if (!hasOwner) return;
+            var tabs = FindVisibleTabs(focused.childElement);
+            if (tabs == null) return;
 
             tabs.Select((tabs.selected + 1) % tabs.count, notify: true);
+        }
+
+        private static MachineryTabs FindVisibleTabs(PixelElement element)
+        {
+            if (element == null || element.handler == null
+                || !element.handler.gameObject.activeInHierarchy) return null;
+            if (element is MachineryTabs tabs) return tabs.count > 1 ? tabs : null;
+            if (element is MachineryPanel panel) return FindVisibleTabs(panel.content);
+            if (element is MachineryPanelRow row)
+            {
+                foreach (var child in row.Panels)
+                {
+                    var found = FindVisibleTabs(child);
+                    if (found != null) return found;
+                }
+            }
+            else if (element is MachineryStack stack)
+            {
+                foreach (var child in stack.elements)
+                {
+                    var found = FindVisibleTabs(child);
+                    if (found != null) return found;
+                }
+            }
+            // Traverse UI layout only, never inventory items or other windows.
+            return null;
         }
 
         private static bool CanOpenContainer(GameItem item)

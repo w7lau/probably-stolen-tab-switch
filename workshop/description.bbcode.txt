@@ -1,6 +1,6 @@
 用快捷键循环切换储存区标签和容器。
 
-Tab：切换当前扩容储存区的下一标签页，最后一页回到第一页。
+Tab：切换当前容器或机器窗口的下一标签页，最后一页回到第一页。支持扩容储存区、超科技容器和自动屠宰机的标签。
 反引号键（Tab 上面那个“`”键）：按从左到右、从上到下的顺序，循环切换柜台下方主物品栏里的容器。关闭的容器会打开，已打开的容器会切到最前面。跳过未解锁的容器，不进入箱包内部的嵌套容器。
 
 在游戏 Mod 管理中选择本 Mod，打开设置即可修改两项按键；点击“应用”后生效并保存。
@@ -8,7 +8,7 @@ Tab：切换当前扩容储存区的下一标签页，最后一页回到第一�
 
 Cycle storage tabs and containers with configurable hotkeys.
 
-Tab: switch to the next tab in the current expanded storage bay, wrapping from the last tab to the first.
+Tab: switch to the next tab in the current container or machine window, wrapping from the last tab to the first. Supports expanded storage bays, Hypertech Bay and Auto Butcher tabs.
 The backquote key (`), just above Tab: cycle containers in the main inventory beneath the counter, from left to right and top to bottom. Closed containers open; open containers come to the front. Locked containers and containers nested inside bags or boxes are skipped.
 
 Select this mod in the game's Mod manager and open Settings to change either key. Click Apply to save and use the new bindings.

@@ -136,7 +136,70 @@ static class Program
         ModEntry.ContainerKey.Set(KeyCode.F6); ModEntry.TabKey.Set(KeyCode.F6);
         a.contentWindow.ToFront(); Press(KeyCode.F6);
         Check(PixelWindow.Front == b.contentWindow && tabs.selected == 2, "Same-key conflict performs one container action");
+        CheckNativeContainerTabs();
         Console.WriteLine($"PASS: {checks} hotkey behavior checks (game/UI doubles).");
+    }
+
+    static void CheckNativeContainerTabs()
+    {
+        ModEntry.TabKey.Set(KeyCode.Tab); ModEntry.ContainerKey.Set(KeyCode.BackQuote);
+        var container = Container(99, new GameInventory());
+        var window = container.contentWindow; window.Show();
+        var tabs = new MachineryTabs { count = 2, selected = 0 };
+        var row = new MachineryPanelRow { panel = new Panel { content = tabs } };
+        window.childElement = row;
+        Check(container.extraTabs == 0, "Native tabs have no expansion marker");
+        Press(KeyCode.Tab);
+        Check(tabs.selected == 1 && tabs.notify, "Hypertech storage native tabs advance without expansion kit");
+        Press(KeyCode.Tab); Check(tabs.selected == 0, "Hypertech native tabs wrap");
+
+        row.panel.role = "settings";
+        Press(KeyCode.Tab); Check(tabs.selected == 1, "Auto butcher settings tabs are not restricted to storage role");
+        Press(KeyCode.Tab); Check(tabs.selected == 0, "Auto butcher pages wrap");
+
+        window.childElement = tabs;
+        Press(KeyCode.Tab); Check(tabs.selected == 1, "Tabs attached directly to content window");
+        window.childElement = new MachineryStack { elements = { new Panel { content = row } } };
+        Press(KeyCode.Tab); Check(tabs.selected == 0, "Tabs inside native panel/stack layouts");
+
+        var hiddenTabs = new MachineryTabs { count = 2 };
+        hiddenTabs.handler.gameObject.activeInHierarchy = false;
+        row.Panels.Insert(0, new Panel { content = hiddenTabs });
+        Press(KeyCode.Tab);
+        Check(tabs.selected == 1 && hiddenTabs.selected == 0, "Hidden tab group skipped");
+        tabs.handler.gameObject.activeInHierarchy = false;
+        Press(KeyCode.Tab); Check(tabs.selected == 1, "No hidden tab group is changed");
+        tabs.handler.gameObject.activeInHierarchy = true;
+        window.childElement.handler.gameObject.activeInHierarchy = false;
+        Press(KeyCode.Tab); Check(tabs.selected == 1, "Hidden ancestor blocks traversal");
+        window.childElement = row;
+        row.Panels.RemoveAt(0);
+        tabs.count = 1; tabs.selected = 0; tabs.notify = false;
+        Press(KeyCode.Tab); Check(tabs.selected == 0 && !tabs.notify, "Single page does nothing");
+        tabs.count = 2;
+        window.isLocked = true; Press(KeyCode.Tab);
+        Check(tabs.selected == 0, "Locked content window is skipped"); window.isLocked = false;
+        var dialog = new PixelWindow { childElement = new MachineryTabs { count = 2 } }; dialog.Show();
+        Press(KeyCode.Tab);
+        Check(tabs.selected == 0 && ((MachineryTabs)dialog.childElement).selected == 0,
+            "Non-container foreground dialog blocks access to tabs behind it");
+        dialog.Hide();
+        var plain = Container(100, new GameInventory()); plain.contentWindow.Show();
+        Press(KeyCode.Tab); Check(tabs.selected == 0, "Container without tabs blocks background switching");
+        plain.contentWindow.Hide(); window.ToFront();
+        var nestedItem = Container(101, new GameInventory());
+        nestedItem.contentWindow.childElement = new MachineryTabs { count = 2 };
+        window.childElement = nestedItem.parentInventory;
+        Press(KeyCode.Tab);
+        Check(((MachineryTabs)nestedItem.contentWindow.childElement).selected == 0,
+            "Traversal never enters inventory items or their separate content windows");
+        window.childElement = row;
+        StoreUIManager.Typing = true; Press(KeyCode.Tab); StoreUIManager.Typing = false;
+        Check(tabs.selected == 0, "Native tab shortcuts suppressed during typing");
+        ModEntry.TabKey.Set(KeyCode.F7); Press(KeyCode.Tab);
+        Check(tabs.selected == 0, "Old key does not affect native tabs after rebind");
+        Press(KeyCode.F7); Check(tabs.selected == 1, "Custom key affects native tabs");
+        window.Hide();
     }
 }
 
@@ -208,7 +271,8 @@ public class PixelWindow
     public static PixelWindow Front;
     public bool canMove = true, isLocked;
     public Handler handler = new();
-    public object child = new(), childElement;
+    public object child = new();
+    public PixelElement childElement;
     public List<GameItem> parentItems = new();
     public long focusStamp;
     public bool IsVisible() => handler.gameObject.activeInHierarchy;
@@ -240,7 +304,8 @@ public class GameItemElement : GameItem
     public Handler handler = new(); public bool destroyed;
     public bool IsDestroyed() => destroyed;
 }
-public class GameInventory { public List<GameItem> childItems = new(); }
+public class PixelElement { public Handler handler = new(); }
+public class GameInventory : PixelElement { public List<GameItem> childItems = new(); }
 public class EmporiumEntry
 {
     public static EmporiumEntry Instance = new();
@@ -258,11 +323,17 @@ public class ItemMouseDoubleClickHandler
     public void OpenContentAction(GameItem item, Vector2 mouse) { Calls++; item.contentWindow.Show(); }
 }
 public static class StorageExpansionHelper { public static int GetExtraTabs(GameItem item) => item.extraTabs; }
-public class MachineryPanelRow { public Panel panel; public Panel GetPanel(string name) => name == "storage" ? panel : null; }
-public class Panel { public object content; }
-public class MachineryTabs
+public class MachineryPanelRow : PixelElement
+{
+    public List<MachineryPanel> Panels = new();
+    public MachineryPanel panel { get => Panels.Count == 0 ? null : Panels[0]; set { Panels.Clear(); Panels.Add(value); } }
+    public MachineryPanel GetPanel(string name) => Panels.Find(p => p.role == name);
+}
+public class MachineryPanel : PixelElement { public PixelElement content; public string role = "storage"; }
+public class Panel : MachineryPanel { }
+public class MachineryStack : PixelElement { public List<PixelElement> elements = new(); }
+public class MachineryTabs : PixelElement
 {
     public int count, selected; public bool notify;
-    public Handler handler = new();
     public void Select(int index, bool notify) { selected = index; this.notify = notify; }
 }

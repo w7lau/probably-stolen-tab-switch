@@ -4,23 +4,23 @@
 
 用快捷键循环切换储存区标签和容器。
 
-- **Tab**：切换当前扩容储存区的下一标签页，最后一页回到第一页。
+- **Tab**：切换当前容器或机器窗口的下一标签页，最后一页回到第一页。支持扩容储存区、超科技容器和自动屠宰机的标签。
 - **反引号键（Tab 上面那个“`”键）**：按从左到右、从上到下的顺序，循环切换柜台下方主物品栏里的容器。关闭的容器会打开，已打开的容器会切到最前面。跳过未解锁的容器，不进入箱包内部的嵌套容器。
 
 在游戏 **Mod 管理 → 选择本 Mod → 设置** 中分别修改“切换标签”和“切换容器”的按键，点击“应用”后生效并保存。`BackQuote` 表示反引号键，`None` 表示禁用。如果两项使用同一个按键，优先切换容器。
 
-容器的顺序跟随主物品栏里的摆放位置，以左上角所在格子逐行排序。手动点击某个符合条件的容器后，从它继续循环。Tab 操作当前位于最前面的扩容储存区窗口。
+容器的顺序跟随主物品栏里的摆放位置，以左上角所在格子逐行排序。手动点击某个符合条件的容器后，从它继续循环。Tab 只操作当前位于最前面的容器或机器窗口中的可见标签。
 
 无需前置 Mod。在游戏 Mods 菜单中启用后，重启游戏即可使用。
 
 Cycle storage tabs and containers with configurable hotkeys.
 
-- **Tab**: switch to the next tab in the current expanded storage bay, wrapping from the last tab to the first.
+- **Tab**: switch to the next tab in the current container or machine window, wrapping from the last tab to the first. Supports expanded storage bays, Hypertech Bay and Auto Butcher tabs.
 - **The backquote key (`), just above Tab**: cycle containers in the main inventory beneath the counter, from left to right and top to bottom. Closed containers open; open containers come to the front. Locked containers and containers nested inside bags or boxes are skipped.
 
 Select this mod in the game's **Mod manager → Settings** to change either shortcut. Click **Apply** to save and use the new bindings. `BackQuote` is the backquote key; `None` disables a shortcut. If both actions share a key, the container action takes priority.
 
-Container order follows each item's top-left grid position and updates when items are moved. Manually focus an eligible container to continue cycling from it. Tab affects the foreground expanded storage window.
+Container order follows each item's top-left grid position and updates when items are moved. Manually focus an eligible container to continue cycling from it. Tab only affects visible tabs in the foreground container or machine window.
 
 No dependencies. Enable the mod in the game's Mods menu and restart the game.
 
@@ -28,7 +28,7 @@ No dependencies. Enable the mod in the game's Mods menu and restart the game.
 
 ## 安装
 
-从 [Releases](https://github.com/w7lau/probably-stolen-tab-switch/releases) 下载 `StorageTabCycle-1.1.0.zip`，解压到游戏根目录的 `Mods` 文件夹。
+从 [Releases](https://github.com/w7lau/probably-stolen-tab-switch/releases) 下载 `StorageTabCycle-1.1.1.zip`，解压到游戏根目录的 `Mods` 文件夹。
 
 ```text
 Probably Stolen/
@@ -50,7 +50,7 @@ Extract the release ZIP into the game's `Mods` directory, enable the mod in the 
 .\build.ps1 -GameDir 'D:\SteamLibrary\steamapps\common\Probably Stolen'
 ```
 
-生成 `package/StorageTabCycle` 和对应版本的 `dist/StorageTabCycle-1.1.0.zip`，不会自动安装或启用。项目以 `netstandard2.1` 为目标。
+生成 `package/StorageTabCycle` 和对应版本的 `dist/StorageTabCycle-1.1.1.zip`，不会自动安装或启用。项目以 `netstandard2.1` 为目标。
 
 离线调用游戏自带扫描器（需要 .NET 9 SDK）：
 
