@@ -1,18 +1,18 @@
 # Tab 切换储存标签 / Storage Tab Cycle
 
-《深空当铺：可能是偷的》正式版原生 Mod：打开扩容储存区，按 **Tab** 切换到下一标签，最后一页循环回第一页。
+在扩容后的储存区中，按 **Tab** 切换到下一个标签页，最后一页自动循环回第一页。
 
-Press **Tab** to cycle tabs in the focused expanded storage bay in **Probably Stolen**. The last tab wraps to the first. Uses the game's native mod loader; no dependencies.
+同时打开多个容器时，先点击要操作的容器窗口，再按 Tab。
+
+无需前置 Mod。在游戏 Mods 菜单中启用后，重启游戏即可使用。
+
+Press **Tab** to switch to the next tab in an expanded storage bay. The last tab automatically wraps back to the first.
+
+When multiple containers are open, click the container you want to use first, then press Tab.
+
+No dependencies. Enable the mod in the game's Mods menu and restart the game.
 
 **[Steam 创意工坊订阅 / Subscribe](https://steamcommunity.com/sharedfiles/filedetails/?id=3831400376)** · **[安装包 / Releases](https://github.com/w7lau/probably-stolen-tab-switch/releases)**
-
-## 功能
-
-- 每次按键切换一页，长按不连翻。
-- 多个窗口同时打开时，先点击要操作的容器使其置前，Tab 只作用于该窗口。前台窗口不是扩容储存区时，不切换后台窗口。
-- 文字输入（含重命名标签及控制台）、重绑快捷键、设置及暂停菜单中不触发。
-- 调用游戏原生切页方法，保留音效和回调。不新增物品、储存格或自定义存档数据，不移动物品。
-- 无前置 Mod，无额外能力权限。
 
 ## 安装
 
@@ -54,7 +54,7 @@ dotnet run --project tools/Scan -p:GameDir='D:\SteamLibrary\steamapps\common\Pro
 ## 创意工坊
 
 创意工坊的内容文件夹使用构建后的 `package/StorageTabCycle`，不要上传源码项目、工具目录或 ZIP。
-App ID 为 **4348910**。可按[官方指南](https://github.com/dragonpan2/probably-stolen-modding/blob/main/ModdingGuide.md#steam-workshop)使用 SteamCMD 发布；当前维护者使用独立工具调用 Steam 官方 UGC 接口上传。
+App ID 为 **4348910**。可按[官方指南](https://github.com/dragonpan2/probably-stolen-modding/blob/main/ModdingGuide.md#steam-workshop)使用 SteamCMD 发布。
 
 ## 许可
 
