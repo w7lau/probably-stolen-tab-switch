@@ -46,13 +46,9 @@ Extract the release ZIP into the game's `Mods` directory, enable the mod in the 
 dotnet run --project tools/Scan -p:GameDir='D:\SteamLibrary\steamapps\common\Probably Stolen' -- package/StorageTabCycle 'D:\SteamLibrary\steamapps\common\Probably Stolen\Probably Stolen_Data\Managed'
 ```
 
-## 验证与兼容
+## 兼容性
 
 - 编译依据：Steam build **26337366**。游戏日志的 Mod 兼容版本字符串为 **0.46D**，manifest 使用该值，它与商店公告版本号不同。
-- Release 编译：0 警告、0 错误。
-- 游戏原版 ModScanner 离线检查：无拒绝项、无额外能力权限。该检查不包括线上信任列表或游戏内激活流程。
-- **2026-11-01：用户安装启用后，确认游戏内核心切页功能可用。**
-- 完整边界场景尚未逐项验收：3/5 页循环、手动选页后切换、多窗口焦点、普通容器置前、重命名/控制台/暂停/设置、关闭重开及读档。
 - 其他 Mod 或玩家将 Tab 另绑为其他操作时，可能同时响应；游戏更新后可能需要适配。
 
 ## 创意工坊

@@ -1,4 +1,4 @@
-Created with the built-in imagegen tool using the user's actual storage-window screenshot as the edit reference.
+Created with imagegen using an in-game storage-window screenshot as the edit reference.
 
 Prompt: Edit the supplied game screenshot into a square Steam Workshop cover. Preserve the grey pixel-art storage window, item grid, and real horizontal labels 标签页1 / 标签页2 / 标签页3. Add the headline Tab 切换标签, English subtitle STORAGE TAB CYCLE, restrained amber arrows highlighting the tab row, and a Tab key with 下一页 · 末页循环回第一页. Use charcoal grey and muted amber. Do not replace the real interface with a futuristic box. No testing claims, developer credits, or verification language.
 
