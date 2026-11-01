@@ -1,21 +1,19 @@
-Tab 切换储存标签 / Storage Tab Cycle
+容器与标签切换 / Container & Tab Switch (原名Tab 切换储存标签 / Storage Tab Cycle)
 
-在扩容后的储存区中，按 Tab 切换到下一个标签页，最后一页自动循环回第一页。
+用快捷键循环切换储存区标签和容器。
 
-同时打开多个容器时，先点击要操作的容器窗口，再按 Tab。
+Tab：切换当前扩容储存区的下一标签页，最后一页回到第一页。
+反引号键（Tab 上面那个“`”键）：按从左到右、从上到下的顺序，循环切换柜台下方主物品栏里的容器。关闭的容器会打开，已打开的容器会切到最前面。跳过未解锁的容器，不进入箱包内部的嵌套容器。
 
+在游戏 Mod 管理中选择本 Mod，打开设置即可修改两项按键；点击“应用”后生效并保存。
 无需前置 Mod。在游戏 Mods 菜单中启用后，重启游戏即可使用。
 
-Press Tab to switch to the next tab in an expanded storage bay. The last tab automatically wraps back to the first.
+Cycle storage tabs and containers with configurable hotkeys.
 
-When multiple containers are open, click the container you want to use first, then press Tab.
+Tab: switch to the next tab in the current expanded storage bay, wrapping from the last tab to the first.
+The backquote key (`), just above Tab: cycle containers in the main inventory beneath the counter, from left to right and top to bottom. Closed containers open; open containers come to the front. Locked containers and containers nested inside bags or boxes are skipped.
 
+Select this mod in the game's Mod manager and open Settings to change either key. Click Apply to save and use the new bindings.
 No dependencies. Enable the mod in the game's Mods menu and restart the game.
-
-手动安装：将 StorageTabCycle 文件夹放入游戏根目录的 Mods 文件夹。
-Manual installation: place the StorageTabCycle folder in the game's Mods folder.
-
-卸载：在 Mods 中停用并重启游戏，再删除本文件夹。
-Uninstall: disable the mod and restart, then remove this folder.
 
 Source / 源码：https://github.com/w7lau/probably-stolen-tab-switch
