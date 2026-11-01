@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Manifest>
+  <ID>storage_tab_cycle</ID>
+  <Name>Tab 切换储存标签 / Storage Tab Cycle</Name>
+  <Author>w7lau</Author>
+  <ModVersion>1.0.0</ModVersion>
+  <Description>扩容储存区打开后，按 Tab 切换到下一标签，末页循环回第一页。多个窗口时作用于最后置前的容器；输入文字时不触发。Press Tab to cycle expanded storage tabs, wrapping at the end.</Description>
+  <GameVersions><Version>0.46D</Version></GameVersions>
+  <Prerequisites />
+  <Assemblies><Assembly>StorageTabCycle.dll</Assembly></Assemblies>
+  <Capabilities />
+</Manifest>

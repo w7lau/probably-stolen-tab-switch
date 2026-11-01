@@ -1,0 +1,9 @@
+bin/
+obj/
+.research/
+dist/
+tools/Scan/bin/
+tools/Scan/obj/
+workshop.vdf
+.publish/
+package/StorageTabCycle/*.dll
