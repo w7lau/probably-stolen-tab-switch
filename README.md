@@ -1,5 +1,7 @@
 # 容器与标签切换 / Container & Tab Switch (原名Tab 切换储存标签 / Storage Tab Cycle)
 
+![标签与容器切换预览 / Tab and container cycling](workshop/preview.jpg)
+
 用快捷键循环切换储存区标签和容器。
 
 - **Tab**：切换当前扩容储存区的下一标签页，最后一页回到第一页。
