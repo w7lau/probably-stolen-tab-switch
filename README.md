@@ -4,6 +4,8 @@
 
 Press **Tab** to cycle tabs in the focused expanded storage bay in **Probably Stolen**. The last tab wraps to the first. Uses the game's native mod loader; no dependencies.
 
+**[Steam 创意工坊订阅 / Subscribe](https://steamcommunity.com/sharedfiles/filedetails/?id=3831400376)** · **[安装包 / Releases](https://github.com/w7lau/probably-stolen-tab-switch/releases)**
+
 ## 功能
 
 - 每次按键切换一页，长按不连翻。
