@@ -39,7 +39,7 @@ static class Program
     static void Main()
     {
         var mod = new ModEntry(); mod.Init(new ModManifest()); mod.OnEnable();
-        Check(ModConfig.For("storage_tab_cycle").Count == 2, "Two native settings registered under manifest ID");
+        Check(ModConfig.For("storage_tab_cycle").Count == 6, "Forward keys plus reverse keys and modifiers registered under manifest ID");
         Check(ModEntry.TabKey.Value == KeyCode.Tab && ModEntry.ContainerKey.Value == KeyCode.BackQuote,
             "Default shortcuts retained");
         var shop = EmporiumEntry.Instance; var root = shop.invElement;
@@ -137,7 +137,76 @@ static class Program
         a.contentWindow.ToFront(); Press(KeyCode.F6);
         Check(PixelWindow.Front == b.contentWindow && tabs.selected == 2, "Same-key conflict performs one container action");
         CheckNativeContainerTabs();
+        CheckReverseShortcuts();
         Console.WriteLine($"PASS: {checks} hotkey behavior checks (game/UI doubles).");
+    }
+
+    static void CheckReverseShortcuts()
+    {
+        ModEntry.TabKey.Set(KeyCode.Tab); ModEntry.ContainerKey.Set(KeyCode.BackQuote);
+        Check(ModEntry.PreviousTabKey.Value == KeyCode.Tab && ModEntry.PreviousContainerKey.Value == KeyCode.BackQuote
+            && ModEntry.PreviousTabModifier.Value == ShortcutModifier.Control
+            && ModEntry.PreviousContainerModifier.Value == ShortcutModifier.Control, "Default reverse bindings use Ctrl");
+        WindowsHandler.current.visibleWindows.Clear();
+        EmporiumEntry.Instance = new(); var root = EmporiumEntry.Instance.invElement;
+        var c = Container(30, root); var a = Container(10, root); var b = Container(20, root);
+        var locked = Container(25, root); locked.sealedType = true; locked.lockState.Value = true;
+        Press(KeyCode.LeftControl, KeyCode.BackQuote);
+        Check(PixelWindow.Front == c.contentWindow, "Reverse with none open starts at final container");
+        Press(KeyCode.RightControl, KeyCode.BackQuote);
+        Check(PixelWindow.Front == b.contentWindow && !locked.contentWindow.IsVisible(), "Right Ctrl reverses and skips locked crate");
+        Press(KeyCode.LeftControl, KeyCode.BackQuote); Check(PixelWindow.Front == a.contentWindow, "Reverse continues to first");
+        int calls = ItemMouseDoubleClickHandler.Calls;
+        Press(KeyCode.LeftControl, KeyCode.BackQuote);
+        Check(PixelWindow.Front == c.contentWindow && ItemMouseDoubleClickHandler.Calls == calls, "Reverse wrap brings open last container forward without reopening");
+        b.contentWindow.ToFront(); Press(KeyCode.LeftControl, KeyCode.BackQuote);
+        Check(PixelWindow.Front == a.contentWindow, "Reverse follows manual focus");
+        b.modifiedShape.minY = 1; a.contentWindow.ToFront(); Press(KeyCode.LeftControl, KeyCode.BackQuote);
+        Check(PixelWindow.Front == b.contentWindow, "Reverse respects rearranged visual positions");
+        b.modifiedShape.minY = 0;
+        var tabs = new MachineryTabs { count = 3, selected = 0 }; a.contentWindow.childElement = tabs; a.contentWindow.ToFront();
+        Press(KeyCode.LeftControl, KeyCode.Tab); Check(tabs.selected == 2 && tabs.notify, "Previous tab wraps first to last once");
+        Press(KeyCode.RightControl, KeyCode.Tab); Check(tabs.selected == 1, "Right Ctrl selects previous tab once");
+        Press(KeyCode.Tab); Check(tabs.selected == 2, "Unmodified Tab still advances");
+        Press(KeyCode.LeftShift, KeyCode.Tab); Check(tabs.selected == 2, "Steam Shift+Tab does not cycle tabs");
+        Press(KeyCode.LeftControl, KeyCode.LeftShift, KeyCode.Tab); Check(tabs.selected == 2, "Extra modifiers do not accidentally match");
+        Input.Held.Add(KeyCode.LeftControl); Press(KeyCode.Tab); Check(tabs.selected == 1, "Ctrl held before Tab works");
+        Press(); Check(tabs.selected == 1, "Holding modifier alone does not repeat"); Input.Held.Clear();
+        Press(KeyCode.LeftControl, KeyCode.BackQuote, KeyCode.Tab);
+        Check(PixelWindow.Front == c.contentWindow && tabs.selected == 1, "Simultaneous reverse bindings perform only container action");
+        a.contentWindow.ToFront();
+        foreach (var mode in new[]{"typing", "capture", "options", "pause", "mod-panel", "mod-settings", "disabled"})
+        {
+            StoreUIManager.Typing = mode == "typing"; KeyBindHelper.SuppressHotkeys = mode == "capture";
+            UI.gameOptionUIManager.IsOpen = mode == "options"; UI.escapeUIManager.menuPanel.activeInHierarchy = mode == "pause";
+            ModUIManager.Instance.panel.activeInHierarchy = mode == "mod-panel";
+            CustomUIManager.Instance.OpenId = mode == "mod-settings" ? ModEntry.SettingsWindowId : null;
+            ModEntry.Enabled = mode != "disabled"; long stamp = PixelWindow.Sequence;
+            Press(KeyCode.LeftControl, KeyCode.BackQuote); Press(KeyCode.LeftControl, KeyCode.Tab);
+            Check(stamp == PixelWindow.Sequence && tabs.selected == 1, "Reverse guard: " + mode);
+        }
+        StoreUIManager.Typing = false; KeyBindHelper.SuppressHotkeys = false; UI.gameOptionUIManager.IsOpen = false;
+        UI.escapeUIManager.menuPanel.activeInHierarchy = false; ModUIManager.Instance.panel.activeInHierarchy = false;
+        CustomUIManager.Instance.OpenId = null; ModEntry.Enabled = true;
+        ModEntry.PreviousTabKey.Set(KeyCode.F7); ModEntry.PreviousTabModifier.Set(ShortcutModifier.Alt);
+        Press(KeyCode.LeftControl, KeyCode.Tab); Check(tabs.selected == 1, "Old reverse binding stops after rebind");
+        Press(KeyCode.RightAlt, KeyCode.F7); Check(tabs.selected == 0, "Custom reverse key and right Alt modifier work");
+        ModEntry.PreviousContainerKey.Set(KeyCode.F6); ModEntry.PreviousContainerModifier.Set(ShortcutModifier.Shift);
+        Press(KeyCode.RightShift, KeyCode.F6); Check(PixelWindow.Front == c.contentWindow, "Custom reverse container binding works");
+        new ModEntry().Init(new ModManifest());
+        Check(ModEntry.PreviousTabKey.Value == KeyCode.F7 && ModEntry.PreviousTabModifier.Value == ShortcutModifier.Alt
+            && ModEntry.PreviousContainerKey.Value == KeyCode.F6 && ModEntry.PreviousContainerModifier.Value == ShortcutModifier.Shift,
+            "Reverse key and modifier config values survive initialization");
+        ModEntry.PreviousContainerKey.Set(KeyCode.None); ModEntry.PreviousTabKey.Set(KeyCode.None);
+        long disabledStamp = PixelWindow.Sequence; Press(KeyCode.RightShift, KeyCode.F6); Press(KeyCode.RightAlt, KeyCode.F7);
+        Check(PixelWindow.Sequence == disabledStamp && tabs.selected == 0, "None disables reverse shortcuts");
+        ModEntry.PreviousTabKey.Set(KeyCode.Tab); ModEntry.PreviousTabModifier.Set(ShortcutModifier.None); a.contentWindow.ToFront();
+        Press(KeyCode.Tab); Check(tabs.selected == 2, "Identical forward/reverse key performs one reverse action");
+        ModEntry.PreviousContainerKey.Set(KeyCode.BackQuote); ModEntry.PreviousContainerModifier.Set(ShortcutModifier.Control);
+        root.childItems.Clear(); root.childItems.Add(a); Press(KeyCode.LeftControl, KeyCode.BackQuote);
+        Check(PixelWindow.Front == a.contentWindow, "Single-container reverse stays on same window");
+        root.childItems.Clear(); calls = ItemMouseDoubleClickHandler.Calls; Press(KeyCode.LeftControl, KeyCode.BackQuote);
+        Check(ItemMouseDoubleClickHandler.Calls == calls, "Empty reverse cycle does nothing");
     }
 
     static void CheckNativeContainerTabs()
@@ -210,13 +279,15 @@ namespace HarmonyLib
 }
 namespace UnityEngine
 {
-    public enum KeyCode { None, Tab, BackQuote, F6, F7 }
+    public enum KeyCode { None, Tab, BackQuote, F6, F7, LeftControl, RightControl, LeftShift, RightShift, LeftAlt, RightAlt }
     public struct Vector2 { }
     public static class Input
     {
         public static HashSet<KeyCode> Keys = new();
+        public static HashSet<KeyCode> Held = new();
         public static Vector2 mousePosition;
         public static bool GetKeyDown(KeyCode key) => Keys.Contains(key);
+        public static bool GetKey(KeyCode key) => Keys.Contains(key) || Held.Contains(key);
     }
     public class GameObject { public bool activeInHierarchy = true; }
 }

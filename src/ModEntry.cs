@@ -4,11 +4,17 @@ using UnityEngine;
 
 namespace StorageTabCycle
 {
+    public enum ShortcutModifier { None, Control, Shift, Alt }
+
     public sealed class ModEntry : IMod
     {
         internal static bool Enabled;
         internal static ConfigEntry<KeyCode> TabKey;
         internal static ConfigEntry<KeyCode> ContainerKey;
+        internal static ConfigEntry<KeyCode> PreviousTabKey;
+        internal static ConfigEntry<KeyCode> PreviousContainerKey;
+        internal static ConfigEntry<ShortcutModifier> PreviousTabModifier;
+        internal static ConfigEntry<ShortcutModifier> PreviousContainerModifier;
         internal static string SettingsWindowId;
         public void Init(ModManifest manifest)
         {
@@ -20,6 +26,18 @@ namespace StorageTabCycle
             ContainerKey = config.DefineEnum("cycle_container_key", KeyCode.BackQuote, "快捷键 / Hotkeys",
                 () => "切换容器 / Next container",
                 () => "循环切换下方主物品栏的容器：关闭时打开，已打开时置前。BackQuote 是 Tab 上方的反引号键。None 表示禁用。\nCycle main-inventory containers: open or bring to front. BackQuote is the key above Tab. None disables this shortcut.");
+            PreviousTabKey = config.DefineEnum("previous_tab_key", KeyCode.Tab, "快捷键 / Hotkeys",
+                () => "上一个标签：按键 / Previous tab: key",
+                () => "配合下方组合键使用，从第一页回到最后一页。None 表示禁用。\nUse with the modifier below. Wraps from the first tab to the last. None disables this shortcut.");
+            PreviousTabModifier = config.DefineEnum("previous_tab_modifier", ShortcutModifier.Control, "快捷键 / Hotkeys",
+                () => "上一个标签：组合键 / Previous tab: modifier",
+                () => "Control = Ctrl；None = 无组合键。左右 Ctrl 均可。\nControl = Ctrl; None = no modifier. Either Ctrl key works.");
+            PreviousContainerKey = config.DefineEnum("previous_container_key", KeyCode.BackQuote, "快捷键 / Hotkeys",
+                () => "上一个容器：按键 / Previous container: key",
+                () => "配合下方组合键使用，从第一个回到最后一个。BackQuote 是 Tab 上方的反引号键。None 表示禁用。\nUse with the modifier below. Wraps from the first container to the last. BackQuote is the key above Tab. None disables this shortcut.");
+            PreviousContainerModifier = config.DefineEnum("previous_container_modifier", ShortcutModifier.Control, "快捷键 / Hotkeys",
+                () => "上一个容器：组合键 / Previous container: modifier",
+                () => "Control = Ctrl；None = 无组合键。左右 Ctrl 均可。\nControl = Ctrl; None = no modifier. Either Ctrl key works.");
             new ModLog(manifest).Log("Storage Tab Cycle " + manifest.ModVersion + " initialized.");
         }
         public void OnEnable() => Enabled = true;
@@ -35,9 +53,13 @@ namespace StorageTabCycle
             if (!ModEntry.Enabled) return;
             var containerKey = ModEntry.ContainerKey?.Value ?? KeyCode.BackQuote;
             var tabKey = ModEntry.TabKey?.Value ?? KeyCode.Tab;
-            bool cycleContainer = containerKey != KeyCode.None && Input.GetKeyDown(containerKey);
-            bool cycleTab = tabKey != KeyCode.None && Input.GetKeyDown(tabKey);
-            if ((!cycleContainer && !cycleTab) || StoreUIManager.IsAnyTyping()
+            bool previousContainer = Pressed(ModEntry.PreviousContainerKey?.Value ?? KeyCode.BackQuote,
+                ModEntry.PreviousContainerModifier?.Value ?? ShortcutModifier.Control);
+            bool previousTab = Pressed(ModEntry.PreviousTabKey?.Value ?? KeyCode.Tab,
+                ModEntry.PreviousTabModifier?.Value ?? ShortcutModifier.Control);
+            bool cycleContainer = Pressed(containerKey, ShortcutModifier.None);
+            bool cycleTab = Pressed(tabKey, ShortcutModifier.None);
+            if ((!cycleContainer && !cycleTab && !previousContainer && !previousTab) || StoreUIManager.IsAnyTyping()
                 || KeyBindHelper.SuppressHotkeys)
                 return;
 
@@ -53,9 +75,9 @@ namespace StorageTabCycle
             var windows = WindowsHandler.current?.visibleWindows;
             if (windows == null) return;
 
-            if (cycleContainer)
+            if (cycleContainer || previousContainer)
             {
-                CycleContainer();
+                CycleContainer(previousContainer ? -1 : 1);
                 return;
             }
 
@@ -86,7 +108,20 @@ namespace StorageTabCycle
             var tabs = FindVisibleTabs(focused.childElement);
             if (tabs == null) return;
 
-            tabs.Select((tabs.selected + 1) % tabs.count, notify: true);
+            tabs.Select((tabs.selected + (previousTab ? -1 : 1) + tabs.count) % tabs.count, notify: true);
+        }
+
+        private static bool Pressed(KeyCode key, ShortcutModifier modifier)
+        {
+            if (key == KeyCode.None || !Input.GetKeyDown(key)) return false;
+            bool control = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+            bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            bool alt = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+            // Exact modifier matching keeps Ctrl+key from also firing the forward action
+            // and leaves unrelated combinations such as Steam's Shift+Tab alone.
+            return control == (modifier == ShortcutModifier.Control)
+                && shift == (modifier == ShortcutModifier.Shift)
+                && alt == (modifier == ShortcutModifier.Alt);
         }
 
         private static MachineryTabs FindVisibleTabs(PixelElement element)
@@ -132,7 +167,7 @@ namespace StorageTabCycle
                 && element.handler != null && element.handler.gameObject.activeInHierarchy;
         }
 
-        private static void CycleContainer()
+        private static void CycleContainer(int direction)
         {
             var shop = EmporiumEntry.Instance;
             var opener = ItemMouseDoubleClickHandler.current;
@@ -170,7 +205,10 @@ namespace StorageTabCycle
                     focusedIndex = i;
             }
 
-            var next = candidates[(focusedIndex + 1) % candidates.Count];
+            int nextIndex = focusedIndex < 0
+                ? (direction < 0 ? candidates.Count - 1 : 0)
+                : (focusedIndex + direction + candidates.Count) % candidates.Count;
+            var next = candidates[nextIndex];
             // Native opening restores position/tabs, plays sound and records the
             // normal opened marker. It never unlocks a crate or activates a machine.
             if (next.contentWindow.IsVisible())
