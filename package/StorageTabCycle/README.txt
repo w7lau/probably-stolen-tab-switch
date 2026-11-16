@@ -8,6 +8,7 @@ Ctrl + Tab：切换上一个标签页，从第一页回到最后一页。
 Ctrl + 反引号键（Tab 上面的“`”键）：切换上一个容器，从第一个回到最后一个。
 
 在游戏 Mod 管理中选择本 Mod，打开设置即可修改正向、反向按键和反向组合键；点击“应用”后生效并保存。
+可在设置中开启“优先切换鼠标所在窗口”。开启后，Tab 和 Ctrl + Tab 优先切换鼠标所在窗口的标签；鼠标不在有标签的窗口上时，按原来的方式切换。默认关闭。
 无需前置 Mod。在游戏 Mods 菜单中启用后，重启游戏即可使用。
 
 Cycle storage tabs and containers with configurable hotkeys.
@@ -18,6 +19,7 @@ Ctrl + Tab: switch to the previous tab, wrapping from the first to the last.
 Ctrl + backquote (`), just above Tab: switch to the previous container, wrapping from the first to the last.
 
 Select this mod in the game's Mod manager and open Settings to change the forward and reverse keys and reverse modifiers. Click Apply to save and use the new bindings.
+Enable “Prefer hovered window” in Settings to use Tab and Ctrl + Tab on the window under the mouse. When no tabbed window is under the mouse, normal switching still applies. Off by default.
 No dependencies. Enable the mod in the game's Mods menu and restart the game.
 
 Source / 源码：https://github.com/w7lau/probably-stolen-tab-switch

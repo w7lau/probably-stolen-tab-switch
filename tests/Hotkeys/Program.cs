@@ -36,10 +36,17 @@ static class Program
         Press(ModEntry.ContainerKey.Value);
         Check(ItemMouseDoubleClickHandler.Calls == before && PixelWindow.Sequence == stamp, label);
     }
-    static void Main()
+    static int Main()
+    {
+        try { Run(); return 0; }
+        catch (Exception error) { Console.Error.WriteLine(error); return 1; }
+    }
+
+    static void Run()
     {
         var mod = new ModEntry(); mod.Init(new ModManifest()); mod.OnEnable();
-        Check(ModConfig.For("storage_tab_cycle").Count == 6, "Forward keys plus reverse keys and modifiers registered under manifest ID");
+        Check(ModConfig.For("storage_tab_cycle").Count == 7, "Shortcuts and hover preference registered under manifest ID");
+        Check(!ModEntry.PreferHoveredWindow.Value, "Hover preference defaults off");
         Check(ModEntry.TabKey.Value == KeyCode.Tab && ModEntry.ContainerKey.Value == KeyCode.BackQuote,
             "Default shortcuts retained");
         var shop = EmporiumEntry.Instance; var root = shop.invElement;
@@ -138,6 +145,7 @@ static class Program
         Check(PixelWindow.Front == b.contentWindow && tabs.selected == 2, "Same-key conflict performs one container action");
         CheckNativeContainerTabs();
         CheckReverseShortcuts();
+        CheckHoveredTabs();
         Console.WriteLine($"PASS: {checks} hotkey behavior checks (game/UI doubles).");
     }
 
@@ -207,6 +215,92 @@ static class Program
         Check(PixelWindow.Front == a.contentWindow, "Single-container reverse stays on same window");
         root.childItems.Clear(); calls = ItemMouseDoubleClickHandler.Calls; Press(KeyCode.LeftControl, KeyCode.BackQuote);
         Check(ItemMouseDoubleClickHandler.Calls == calls, "Empty reverse cycle does nothing");
+    }
+
+    static void CheckHoveredTabs()
+    {
+        WindowsHandler.current.visibleWindows.Clear();
+        ModEntry.TabKey.Set(KeyCode.Tab); ModEntry.ContainerKey.Set(KeyCode.BackQuote);
+        ModEntry.PreviousTabKey.Set(KeyCode.Tab); ModEntry.PreviousTabModifier.Set(ShortcutModifier.Control);
+        var behind = Container(201, new GameInventory()).contentWindow;
+        var front = Container(202, new GameInventory()).contentWindow;
+        var backTabs = new MachineryTabs { count = 3 };
+        var frontTabs = new MachineryTabs { count = 3 };
+        behind.childElement = new MachineryStack { elements = { new Panel { content = backTabs } } };
+        front.childElement = frontTabs;
+        behind.Show(); front.Show();
+        RenderHandler.Hit = behind;
+        Press(KeyCode.Tab);
+        Check(frontTabs.selected == 1 && backTabs.selected == 0 && RenderHandler.Calls == 0,
+            "Default mode ignores parked mouse and performs no hit test");
+        ModEntry.PreferHoveredWindow.Set(true);
+        long frontStamp = front.focusStamp, backStamp = behind.focusStamp;
+        Press(KeyCode.Tab);
+        Check(backTabs.selected == 1 && frontTabs.selected == 1 && backTabs.notify,
+            "Hover switches a background window without clicking it");
+        Check(front.focusStamp == frontStamp && behind.focusStamp == backStamp && PixelWindow.Front == front,
+            "Hover leaves focus and window order unchanged");
+        Press(KeyCode.LeftControl, KeyCode.Tab); Check(backTabs.selected == 0, "Previous tab uses hovered window");
+        Press(KeyCode.RightControl, KeyCode.Tab); Check(backTabs.selected == 2, "Hovered previous tab wraps");
+        Press(KeyCode.Tab); Check(backTabs.selected == 0, "Hovered next tab wraps");
+        RenderHandler.Hit = null; Press(KeyCode.Tab);
+        Check(frontTabs.selected == 2 && backTabs.selected == 0, "Mouse outside windows falls back to focus");
+        RenderHandler.Hit = front; Press(KeyCode.Tab);
+        Check(frontTabs.selected == 0 && backTabs.selected == 0, "Topmost hit wins over covered window");
+
+        // A topmost plain window blocks the native hit; do not search other hovered windows.
+        var plain = Container(203, new GameInventory()).contentWindow;
+        plain.Show(); front.ToFront(); RenderHandler.Hit = plain;
+        Press(KeyCode.Tab); Check(frontTabs.selected == 1 && backTabs.selected == 0,
+            "Non-tabbed hit falls back to foreground, not a covered tabbed window");
+        plain.ToFront(); Press(KeyCode.Tab);
+        Check(frontTabs.selected == 1 && backTabs.selected == 0, "Non-tabbed foreground keeps old no-op fallback");
+        RenderHandler.Hit = behind; Press(KeyCode.Tab);
+        Check(backTabs.selected == 1, "Valid hovered tabs work when another foreground container has none");
+        front.ToFront();
+        void FallsBack(string label)
+        {
+            int selected = frontTabs.selected, background = backTabs.selected;
+            Press(KeyCode.Tab);
+            Check(frontTabs.selected == (selected + 1) % 3 && backTabs.selected == background, label);
+        }
+        behind.isLocked = true; FallsBack("Locked hovered window falls back"); behind.isLocked = false;
+        behind.canMove = false; FallsBack("Fixed hovered window falls back"); behind.canMove = true;
+        behind.handler.gameObject.activeInHierarchy = false; FallsBack("Inactive hovered window falls back");
+        behind.handler.gameObject.activeInHierarchy = true;
+        WindowsHandler.current.visibleWindows.Remove(behind); FallsBack("Unregistered hovered window falls back");
+        WindowsHandler.current.visibleWindows.Add(behind);
+        var owner = behind.parentItems[0]; behind.parentItems.Clear(); FallsBack("Non-item window falls back");
+        behind.parentItems.Add(owner);
+        behind.childElement.handler.gameObject.activeInHierarchy = false; FallsBack("Hidden tab layout falls back");
+        behind.childElement.handler.gameObject.activeInHierarchy = true;
+        backTabs.count = 1; FallsBack("Single-page hovered window falls back"); backTabs.count = 3;
+        void Suppressed(string label, params KeyCode[] keys)
+        {
+            int calls = RenderHandler.Calls, f = frontTabs.selected, b = backTabs.selected;
+            Press(keys);
+            Check(RenderHandler.Calls == calls && frontTabs.selected == f && backTabs.selected == b, label);
+        }
+        Suppressed("Idle frames do not raycast");
+        Suppressed("Unrelated modifiers do not raycast", KeyCode.LeftShift, KeyCode.Tab);
+        StoreUIManager.Typing = true; Suppressed("Typing suppresses hover", KeyCode.Tab); StoreUIManager.Typing = false;
+        KeyBindHelper.SuppressHotkeys = true; Suppressed("Key rebinding suppresses hover", KeyCode.Tab); KeyBindHelper.SuppressHotkeys = false;
+        UI.gameOptionUIManager.IsOpen = true; Suppressed("Game settings suppress hover", KeyCode.Tab); UI.gameOptionUIManager.IsOpen = false;
+        UI.escapeUIManager.menuPanel.activeInHierarchy = true; Suppressed("Pause suppresses hover", KeyCode.Tab); UI.escapeUIManager.menuPanel.activeInHierarchy = false;
+        ModUIManager.Instance.panel.activeInHierarchy = true; Suppressed("Mod list suppresses hover", KeyCode.Tab); ModUIManager.Instance.panel.activeInHierarchy = false;
+        CustomUIManager.Instance.OpenId = ModEntry.SettingsWindowId; Suppressed("Mod settings suppress hover", KeyCode.Tab); CustomUIManager.Instance.OpenId = null;
+        ModEntry.Enabled = false; Suppressed("Disabled mod does not raycast", KeyCode.Tab); ModEntry.Enabled = true;
+        Suppressed("Container cycling does not raycast or switch tabs", KeyCode.BackQuote);
+        front.ToFront(); ModEntry.TabKey.Set(KeyCode.F7);
+        Suppressed("Rebound next key ignores old key", KeyCode.Tab);
+        int old = backTabs.selected; Press(KeyCode.F7);
+        Check(backTabs.selected == (old + 1) % 3, "Custom next key uses hover");
+        ModEntry.PreviousTabKey.Set(KeyCode.F6); ModEntry.PreviousTabModifier.Set(ShortcutModifier.Alt);
+        Press(KeyCode.LeftAlt, KeyCode.F6); Check(backTabs.selected == old, "Custom previous key uses hover");
+        ModEntry.PreferHoveredWindow.Set(false);
+        int previousCalls = RenderHandler.Calls; old = frontTabs.selected; Press(KeyCode.F7);
+        Check(frontTabs.selected == (old + 1) % 3 && RenderHandler.Calls == previousCalls,
+            "Turning preference off restores focus immediately without a restart");
     }
 
     static void CheckNativeContainerTabs()
@@ -306,6 +400,12 @@ public class ModConfig
     public int Count => entries.Count;
     public static ModConfig For(string id)
     { if (!Configs.ContainsKey(id)) Configs[id] = new(); return Configs[id]; }
+    public ConfigEntry<bool> Define(string key, bool value, string section, Func<string> label,
+        Func<string> tooltip = null, bool requiresRestart = false)
+    {
+        if (!entries.ContainsKey(key)) entries[key] = new ConfigEntry<bool>(value);
+        return (ConfigEntry<bool>)entries[key];
+    }
     public ConfigEntry<T> DefineEnum<T>(string key, T value, string section, Func<string> label,
         Func<string> tooltip = null, bool requiresRestart = false) where T : struct, Enum
     {
@@ -335,6 +435,14 @@ public static class KeyBindHelper { public static bool SuppressHotkeys; }
 public static class ItemPinHelper { public static bool BlocksClicks; }
 public class WindowsHandler { public static WindowsHandler current = new(); public List<PixelWindow> visibleWindows = new(); }
 public class Handler { public GameObject gameObject = new(); }
+public static class RenderHandler
+{
+    // Models the native first-hit result; native parent traversal is checked separately.
+    public static PixelWindow Hit;
+    public static int Calls;
+    public static T RaycastFindParentElement<T>(Vector2 position)
+    { Calls++; return Hit is T value ? value : default; }
+}
 public class PixelWindow
 {
     static long sequence;

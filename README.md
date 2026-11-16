@@ -11,7 +11,9 @@
 
 在游戏 **Mod 管理 → 选择本 Mod → 设置** 中修改正向、反向按键及反向组合键，点击“应用”后生效并保存。`Control` 表示 Ctrl，左右 Ctrl 均可；组合键选 `None` 表示不需要组合键，按键选 `None` 表示禁用该操作。`BackQuote` 表示反引号键。相同快捷键优先切换容器；同一操作的正反向设置相同时，优先反向切换。
 
-容器的顺序跟随主物品栏里的摆放位置，以左上角所在格子逐行排序。手动点击某个符合条件的容器后，从它继续循环。Tab 只操作当前位于最前面的容器或机器窗口中的可见标签。
+容器的顺序跟随主物品栏里的摆放位置，以左上角所在格子逐行排序。手动点击某个符合条件的容器后，从它继续循环。默认只切换当前最前面的容器或机器窗口中的可见标签。
+
+可在设置中开启“优先切换鼠标所在窗口”。开启后，Tab 和 Ctrl + Tab 优先切换鼠标所在窗口的标签；鼠标不在有标签的窗口上时，按原来的方式切换。默认关闭。
 
 无需前置 Mod。在游戏 Mods 菜单中启用后，重启游戏即可使用。
 
@@ -24,7 +26,9 @@ Cycle storage tabs and containers with configurable hotkeys.
 
 Select this mod in the game's **Mod manager → Settings** to change the forward and reverse keys and reverse modifiers. Click **Apply** to save. `Control` means Ctrl; either Ctrl key works. A modifier of `None` needs no modifier; a key of `None` disables the action. `BackQuote` is the key above Tab. Containers take priority if shortcuts overlap; reverse takes priority over forward for identical bindings.
 
-Container order follows each item's top-left grid position and updates when items are moved. Manually focus an eligible container to continue cycling from it. Tab only affects visible tabs in the foreground container or machine window.
+Container order follows each item's top-left grid position and updates when items are moved. Manually focus an eligible container to continue cycling from it. By default, Tab only affects visible tabs in the foreground container or machine window.
+
+Enable “Prefer hovered window” in Settings to use Tab and Ctrl + Tab on the window under the mouse. When no tabbed window is under the mouse, normal switching still applies. Off by default.
 
 No dependencies. Enable the mod in the game's Mods menu and restart the game.
 
@@ -32,7 +36,7 @@ No dependencies. Enable the mod in the game's Mods menu and restart the game.
 
 ## 安装
 
-从 [Releases](https://github.com/w7lau/probably-stolen-tab-switch/releases) 下载 `StorageTabCycle-1.2.0.zip`，解压到游戏根目录的 `Mods` 文件夹。
+从 [Releases](https://github.com/w7lau/probably-stolen-tab-switch/releases) 下载 `StorageTabCycle-1.3.0.zip`，解压到游戏根目录的 `Mods` 文件夹。
 
 ```text
 Probably Stolen/
@@ -54,7 +58,7 @@ Extract the release ZIP into the game's `Mods` directory, enable the mod in the 
 .\build.ps1 -GameDir 'D:\SteamLibrary\steamapps\common\Probably Stolen'
 ```
 
-生成 `package/StorageTabCycle` 和对应版本的 `dist/StorageTabCycle-1.2.0.zip`，不会自动安装或启用。项目以 `netstandard2.1` 为目标。
+生成 `package/StorageTabCycle` 和对应版本的 `dist/StorageTabCycle-1.3.0.zip`，不会自动安装或启用。项目以 `netstandard2.1` 为目标。
 
 离线调用游戏自带扫描器（需要 .NET 9 SDK）：
 
@@ -64,7 +68,7 @@ dotnet run --project tools/Scan -p:GameDir='D:\SteamLibrary\steamapps\common\Pro
 
 ## 兼容性
 
-- 编译依据：Steam build **26337366**。游戏日志的 Mod 兼容版本字符串为 **0.46D**，manifest 使用该值，它与商店公告版本号不同。
+- 编译依据：Steam build **26556045**。游戏日志的 Mod 兼容版本字符串为 **0.46D**，manifest 使用该值，它与商店公告版本号不同。
 - 快捷键不会屏蔽游戏或其他 Mod 的同名按键操作，可在本 Mod 设置中更换按键。输入文字、打开 Mod 设置、游戏设置或暂停菜单时不触发。
 
 ## 创意工坊

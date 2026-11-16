@@ -15,11 +15,15 @@ namespace StorageTabCycle
         internal static ConfigEntry<KeyCode> PreviousContainerKey;
         internal static ConfigEntry<ShortcutModifier> PreviousTabModifier;
         internal static ConfigEntry<ShortcutModifier> PreviousContainerModifier;
+        internal static ConfigEntry<bool> PreferHoveredWindow;
         internal static string SettingsWindowId;
         public void Init(ModManifest manifest)
         {
             var config = ModConfig.For(manifest.ID);
             SettingsWindowId = ModConfigWindow.WINDOW_ID_PREFIX + manifest.ID;
+            PreferHoveredWindow = config.Define("prefer_hovered_window", false, "标签切换 / Tab switching",
+                () => "优先切换鼠标所在窗口 / Prefer hovered window",
+                () => "开启后，优先切换鼠标所在窗口的标签；鼠标不在有标签的窗口上时，按原来的方式切换。\nPrefer the tabs in the window under the mouse. Fall back to normal switching when no tabbed window is under the mouse.");
             TabKey = config.DefineEnum("cycle_tab_key", KeyCode.Tab, "快捷键 / Hotkeys",
                 () => "切换标签 / Next tab",
                 () => "循环切换当前容器或机器窗口的标签。None 表示禁用。\nCycle tabs in the current container or machine window. None disables this shortcut.");
@@ -81,6 +85,24 @@ namespace StorageTabCycle
                 return;
             }
 
+            MachineryTabs tabs = null;
+            if (ModEntry.PreferHoveredWindow?.Value == true)
+            {
+                // Native hit testing starts at the topmost rendered element and
+                // follows its parents. Do not search through an overlapping window.
+                var hovered = RenderHandler.RaycastFindParentElement<PixelWindow>(Input.mousePosition);
+                if (hovered != null && windows.Contains(hovered))
+                    tabs = FindWindowTabs(hovered);
+            }
+
+            if (tabs == null) tabs = FindFocusedTabs(windows);
+            if (tabs == null) return;
+            // Selecting tabs does not change window focus or stacking order.
+            tabs.Select((tabs.selected + (previousTab ? -1 : 1) + tabs.count) % tabs.count, notify: true);
+        }
+
+        private static MachineryTabs FindFocusedTabs(IEnumerable<PixelWindow> windows)
+        {
             // visibleWindows is insertion-ordered, not focus-ordered. The game's
             // ToFront updates focusStamp even when it does not reorder that list.
             PixelWindow focused = null;
@@ -94,21 +116,23 @@ namespace StorageTabCycle
 
             // Keep the shortcut in the foreground item's content window, but do
             // not require an expansion-kit tag: native multi-page items lack it.
-            if (focused == null || focused.isLocked) return;
+            return FindWindowTabs(focused);
+        }
+
+        private static MachineryTabs FindWindowTabs(PixelWindow window)
+        {
+            if (window == null || !window.canMove || window.isLocked || window.handler == null
+                || !window.handler.gameObject.activeInHierarchy) return null;
             bool hasOwner = false;
-            foreach (var item in focused.parentItems)
+            foreach (var item in window.parentItems)
             {
-                if (item != null && item.contentWindow == focused)
+                if (item != null && item.contentWindow == window)
                 {
                     hasOwner = true;
                     break;
                 }
             }
-            if (!hasOwner) return;
-            var tabs = FindVisibleTabs(focused.childElement);
-            if (tabs == null) return;
-
-            tabs.Select((tabs.selected + (previousTab ? -1 : 1) + tabs.count) % tabs.count, notify: true);
+            return hasOwner ? FindVisibleTabs(window.childElement) : null;
         }
 
         private static bool Pressed(KeyCode key, ShortcutModifier modifier)
